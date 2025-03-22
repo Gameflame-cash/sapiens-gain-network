@@ -16,6 +16,8 @@ interface User {
   referrer: string | null;
   created_at: string;
   referrals: string[];
+  depositAmount?: number; // Added this property to fix the type error
+  lastStakingReward?: string | null;
 }
 
 interface Transaction {
@@ -98,7 +100,7 @@ const Admin = () => {
       
       // Update transaction status
       const updatedTransactions = transactions.map(t => 
-        t.id === transaction.id ? { ...t, status: 'approved' } : t
+        t.id === transaction.id ? { ...t, status: 'approved' as const } : t
       );
       
       // Save to localStorage
@@ -131,7 +133,7 @@ const Admin = () => {
       
       // Update transaction status
       const updatedTransactions = transactions.map(t => 
-        t.id === transaction.id ? { ...t, status: 'approved' } : t
+        t.id === transaction.id ? { ...t, status: 'approved' as const } : t
       );
       
       // Save to localStorage
@@ -155,7 +157,7 @@ const Admin = () => {
   const handleRejectTransaction = (transaction: Transaction) => {
     // Update transaction status to rejected
     const updatedTransactions = transactions.map(t => 
-      t.id === transaction.id ? { ...t, status: 'rejected' } : t
+      t.id === transaction.id ? { ...t, status: 'rejected' as const } : t
     );
     
     // Save to localStorage
