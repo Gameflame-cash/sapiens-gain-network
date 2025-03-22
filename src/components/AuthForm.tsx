@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 type User = {
   id: number;
@@ -20,6 +20,16 @@ const AuthForm = () => {
   const [password, setPassword] = useState('');
   const [referrer, setReferrer] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check for referral in URL
+    const searchParams = new URLSearchParams(location.search);
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferrer(ref);
+    }
+  }, [location]);
 
   // Mock user database (would connect to backend in production)
   const mockRegister = async (username: string, password: string, referrer: string) => {
@@ -119,7 +129,7 @@ const AuthForm = () => {
 
   return (
     <Card className="w-full max-w-md mx-auto glass-card animate-in">
-      <Tabs defaultValue="login" className="w-full">
+      <Tabs defaultValue={referrer ? 'register' : 'login'} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="login" className="text-lg">Login</TabsTrigger>
           <TabsTrigger value="register" className="text-lg">Register</TabsTrigger>
@@ -194,6 +204,11 @@ const AuthForm = () => {
                   value={referrer}
                   onChange={(e) => setReferrer(e.target.value)}
                 />
+                {referrer && (
+                  <p className="text-xs text-primary mt-1">
+                    You were referred by: {referrer}
+                  </p>
+                )}
               </div>
             </CardContent>
             <CardFooter>

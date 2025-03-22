@@ -8,6 +8,7 @@ import BalanceCard from '@/components/BalanceCard';
 import DepositCard from '@/components/DepositCard';
 import ReferralCard from '@/components/ReferralCard';
 import StakingCard from '@/components/StakingCard';
+import WithdrawCard from '@/components/WithdrawCard';
 
 type User = {
   id: number;
@@ -18,6 +19,16 @@ type User = {
   referrals: string[];
   lastStakingReward: string | null;
   depositAmount: number;
+};
+
+type Transaction = {
+  id: string;
+  userId: number;
+  type: 'deposit' | 'withdrawal';
+  amount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  address?: string;
+  timestamp: string;
 };
 
 const Dashboard = () => {
@@ -88,34 +99,42 @@ const Dashboard = () => {
   const handleDeposit = (amount: number) => {
     if (!user) return;
     
-    const updatedUser = { ...user };
-    updatedUser.balance += amount;
+    // Create a deposit transaction record
+    const transactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      userId: user.id,
+      type: 'deposit',
+      amount: amount,
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    };
     
-    // If depositing $100 or more and have 10+ referrals, activate staking
-    if (amount >= 100 && updatedUser.referrals.length >= 10 && !updatedUser.lastStakingReward) {
-      updatedUser.depositAmount = Math.max(updatedUser.depositAmount, amount);
-      updatedUser.lastStakingReward = new Date().toISOString();
-      
-      // Calculate next reward time
-      const nextRewardTime = new Date();
-      nextRewardTime.setDate(nextRewardTime.getDate() + 1);
-      setNextReward(nextRewardTime);
-      
-      toast.success('Staking activated! You will receive $1 daily reward.');
-    } else if (amount >= 100 && updatedUser.referrals.length >= 10) {
-      updatedUser.depositAmount = Math.max(updatedUser.depositAmount, amount);
-    }
+    transactions.push(newTransaction);
+    localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
     
-    // Update localStorage
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    toast.info('Your deposit request is pending admin approval');
+  };
+  
+  const handleWithdraw = (amount: number, address: string) => {
+    if (!user) return;
     
-    // Update users array in localStorage
-    const users = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
-    const updatedUsers = users.map((u: User) => u.id === updatedUser.id ? updatedUser : u);
-    localStorage.setItem('sapiens_users', JSON.stringify(updatedUsers));
+    // Create a withdraw transaction record
+    const transactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      userId: user.id,
+      type: 'withdrawal',
+      amount: amount,
+      status: 'pending',
+      address: address,
+      timestamp: new Date().toISOString()
+    };
     
-    // Update user state
-    setUser(updatedUser);
+    transactions.push(newTransaction);
+    localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
+    
+    toast.info('Your withdrawal request is pending admin approval');
   };
   
   const handleAddReferral = (referral: string) => {
@@ -175,6 +194,7 @@ const Dashboard = () => {
   }
   
   const isStakingActive = user.referrals.length >= 10 && user.depositAmount >= 100 && !!user.lastStakingReward;
+  const referralLink = `${window.location.origin}/?ref=${encodeURIComponent(user.username)}`;
 
   return (
     <Background>
@@ -208,12 +228,21 @@ const Dashboard = () => {
             />
           </div>
           
+          {/* Withdraw card */}
+          <div className="lg:col-span-1 md:col-span-2 col-span-1 animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
+            <WithdrawCard 
+              balance={user.balance}
+              onWithdraw={handleWithdraw}
+            />
+          </div>
+          
           {/* Referral card - full width */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
             <ReferralCard 
               username={user.username}
               onAddReferral={handleAddReferral}
               referrals={user.referrals || []}
+              referralLink={referralLink}
             />
           </div>
         </div>

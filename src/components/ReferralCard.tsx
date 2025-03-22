@@ -4,21 +4,27 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Copy, Users } from 'lucide-react';
+import { Copy, Users, Link } from 'lucide-react';
 
 interface ReferralCardProps {
   username: string;
   onAddReferral: (referral: string) => void;
   referrals: string[];
+  referralLink: string;
 }
 
-const ReferralCard: React.FC<ReferralCardProps> = ({ username, onAddReferral, referrals }) => {
+const ReferralCard: React.FC<ReferralCardProps> = ({ username, onAddReferral, referrals, referralLink }) => {
   const [newReferral, setNewReferral] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleCopyReferralLink = () => {
+  const handleCopyReferralCode = () => {
     navigator.clipboard.writeText(username);
     toast.success('Referral code copied to clipboard!');
+  };
+  
+  const handleCopyReferralLink = () => {
+    navigator.clipboard.writeText(referralLink);
+    toast.success('Referral link copied to clipboard!');
   };
 
   const handleAddReferral = () => {
@@ -61,13 +67,24 @@ const ReferralCard: React.FC<ReferralCardProps> = ({ username, onAddReferral, re
       </CardHeader>
       <CardContent className="pb-3">
         <div className="space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
-            <div className="flex items-center gap-2">
-              <code className="bg-secondary p-2 rounded-md flex-1 font-mono text-sm">{username}</code>
-              <Button variant="outline" size="icon" onClick={handleCopyReferralLink}>
-                <Copy className="h-4 w-4" />
-              </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Your referral code:</p>
+              <div className="flex items-center gap-2">
+                <code className="bg-secondary p-2 rounded-md flex-1 font-mono text-sm">{username}</code>
+                <Button variant="outline" size="icon" onClick={handleCopyReferralCode}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Your referral link:</p>
+              <div className="flex items-center gap-2">
+                <code className="bg-secondary p-2 rounded-md flex-1 font-mono text-sm truncate">{referralLink}</code>
+                <Button variant="outline" size="icon" onClick={handleCopyReferralLink}>
+                  <Link className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
           <div>

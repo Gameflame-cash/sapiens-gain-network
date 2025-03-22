@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Copy, Wallet } from 'lucide-react';
 
 interface DepositCardProps {
   onDeposit: (amount: number) => void;
@@ -14,6 +14,8 @@ interface DepositCardProps {
 const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) => {
   const [amount, setAmount] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [showUsdtAddress, setShowUsdtAddress] = useState<boolean>(false);
+  const usdtAddress = "TURvPp42rgt773TNTNzdjg2wXN1E3P6PxT";
 
   const handleDeposit = () => {
     const depositAmount = parseFloat(amount);
@@ -23,6 +25,16 @@ const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) =
       return;
     }
     
+    setShowUsdtAddress(true);
+  };
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(usdtAddress);
+    toast.success('USDT address copied to clipboard');
+  };
+
+  const handleConfirmDeposit = () => {
+    const depositAmount = parseFloat(amount);
     setIsSubmitting(true);
     
     // Simulate API call
@@ -30,7 +42,8 @@ const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) =
       onDeposit(depositAmount);
       setAmount('');
       setIsSubmitting(false);
-      toast.success(`Successfully deposited $${depositAmount.toFixed(2)}`);
+      setShowUsdtAddress(false);
+      toast.success(`Deposit request of $${depositAmount.toFixed(2)} submitted`);
     }, 1000);
   };
 
@@ -46,25 +59,67 @@ const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) =
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
-          <Input
-            type="number"
-            placeholder="Enter amount"
-            className="pl-9 glass-input"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
+        {!showUsdtAddress ? (
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+            <Input
+              type="number"
+              placeholder="Enter amount"
+              className="pl-9 glass-input"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+        ) : (
+          <div className="space-y-3 animate-fade-in">
+            <p className="text-sm text-muted-foreground">Send {amount} USDT (TRC20) to:</p>
+            <div className="relative">
+              <div className="bg-secondary p-3 rounded-md text-sm font-mono break-all relative">
+                {usdtAddress}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2" 
+                  onClick={handleCopyAddress}
+                >
+                  <Copy size={14} />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              After sending, click the confirm button below. Your deposit will be pending until approved by an admin.
+            </p>
+          </div>
+        )}
       </CardContent>
       <CardFooter>
-        <Button 
-          onClick={handleDeposit} 
-          className="w-full glass-button" 
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Processing...' : 'Deposit Now'}
-        </Button>
+        {!showUsdtAddress ? (
+          <Button 
+            onClick={handleDeposit} 
+            className="w-full glass-button" 
+            disabled={isSubmitting}
+          >
+            <Wallet size={16} className="mr-2" />
+            {isSubmitting ? 'Processing...' : 'Deposit Now'}
+          </Button>
+        ) : (
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowUsdtAddress(false)} 
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmDeposit} 
+              className="flex-1 glass-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Processing...' : 'I Have Sent USDT'}
+            </Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );
