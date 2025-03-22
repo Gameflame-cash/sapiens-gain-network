@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { Transaction } from '@/types';
 
 interface TransactionCardProps {
@@ -19,19 +20,31 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
   onApprove,
   onReject
 }) => {
+  // Format date to readable string
+  const formattedDate = new Date(transaction.timestamp).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   return (
     <Card className="glass-card overflow-hidden">
       <CardContent className="p-0">
         <div className="p-4 border-b">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="font-medium capitalize">
-                {transaction.type} {isPending ? 'Request' : `- ${transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}`}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium capitalize">
+                  {transaction.type} {isPending ? 'Request' : `- ${transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}`}
+                </h3>
+                <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">ID: {transaction.id.slice(0, 8)}</span>
+              </div>
               <p className="text-sm text-muted-foreground">
-                User: {username}
+                User: {username} (ID: {transaction.userId})
               </p>
-              <p className="text-sm">
+              <p className="text-sm font-semibold">
                 Amount: ${transaction.amount.toFixed(2)}
               </p>
               {transaction.address && (
@@ -39,8 +52,11 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
                   Address: {transaction.address}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {new Date(transaction.timestamp).toLocaleString()}
+              <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                <span className="inline-block w-3 h-3 rounded-full mr-1.5" style={{ 
+                  backgroundColor: isPending ? 'orange' : transaction.status === 'approved' ? 'green' : 'red' 
+                }}></span>
+                {formattedDate}
               </p>
             </div>
             {isPending && onApprove && onReject && (

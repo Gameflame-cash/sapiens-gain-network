@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { User, Transaction } from '@/types';
@@ -11,9 +12,23 @@ export const useTransactions = () => {
     const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
     const storedUsers = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
     
+    console.log('Loaded transactions:', storedTransactions);
+    console.log('Loaded users:', storedUsers);
+    
     setTransactions(storedTransactions);
     setUsers(storedUsers);
   };
+
+  // Auto-reload data every few seconds to see new transactions
+  useEffect(() => {
+    loadData();
+    
+    const interval = setInterval(() => {
+      loadData();
+    }, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const getUsernameById = (userId: number) => {
     const user = users.find(user => user.id === userId);
