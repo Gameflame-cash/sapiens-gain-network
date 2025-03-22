@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,27 +8,7 @@ import DepositCard from '@/components/DepositCard';
 import ReferralCard from '@/components/ReferralCard';
 import StakingCard from '@/components/StakingCard';
 import WithdrawCard from '@/components/WithdrawCard';
-
-type User = {
-  id: number;
-  username: string;
-  balance: number;
-  referrer: string | null;
-  created_at: string;
-  referrals: string[];
-  lastStakingReward: string | null;
-  depositAmount: number;
-};
-
-type Transaction = {
-  id: string;
-  userId: number;
-  type: 'deposit' | 'withdrawal';
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected';
-  address?: string;
-  timestamp: string;
-};
+import { User, Transaction } from '@/types';
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);

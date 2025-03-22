@@ -1,29 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
-
-interface User {
-  id: number;
-  username: string;
-  balance: number;
-  referrer: string | null;
-  created_at: string;
-  referrals: string[];
-  depositAmount?: number;
-  lastStakingReward?: string | null;
-}
-
-interface Transaction {
-  id: string;
-  userId: number;
-  type: 'deposit' | 'withdrawal';
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected';
-  address?: string;
-  timestamp: string;
-}
+import { Transaction } from '@/types';
 
 interface TransactionCardProps {
   transaction: Transaction;

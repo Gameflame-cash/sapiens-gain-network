@@ -7,6 +7,7 @@ import { Shield, ArrowLeft } from 'lucide-react';
 import AdminAuth from '@/components/admin/AdminAuth';
 import TransactionTabs from '@/components/admin/TransactionTabs';
 import { useTransactions } from '@/hooks/useTransactions';
+import { User } from '@/types';
 
 // Admin usernames for demonstration
 const ADMIN_USERS = ['admin', 'admin123', 'superadmin'];
