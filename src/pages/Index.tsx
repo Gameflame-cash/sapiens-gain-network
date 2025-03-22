@@ -1,13 +1,34 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AuthForm from '@/components/AuthForm';
+import Background from '@/components/Background';
 
 const Index = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if user is already logged in
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <Background>
+      <div className="container max-w-7xl mx-auto px-4 py-20">
+        <div className="flex flex-col items-center justify-center min-h-[80vh]">
+          <div className="w-full max-w-md text-center mb-12 animate-slide-in-up">
+            <h1 className="text-4xl font-bold mb-4">Sapiens NFT</h1>
+            <p className="text-lg text-muted-foreground">The future of digital ownership and referral rewards</p>
+          </div>
+          <div className="w-full max-w-md animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <AuthForm />
+          </div>
+        </div>
       </div>
-    </div>
+    </Background>
   );
 };
 
