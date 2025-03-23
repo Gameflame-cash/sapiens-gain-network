@@ -29,7 +29,17 @@ const Admin = () => {
     }
     
     setLoading(false);
-  }, [loadData]);
+
+    // Force refresh every few seconds to ensure latest data
+    const refreshInterval = setInterval(() => {
+      if (authenticated) {
+        loadData();
+        console.log("Admin panel - auto refreshing transactions...");
+      }
+    }, 3000);
+
+    return () => clearInterval(refreshInterval);
+  }, [loadData, authenticated]);
 
   const handleAuthenticate = () => {
     setAuthenticated(true);
@@ -96,6 +106,14 @@ const Admin = () => {
               <p className="text-amber-800 dark:text-amber-200">
                 No transactions found in storage. If you submitted a deposit request, it might not have been saved properly.
                 Try making another deposit from the dashboard or check if localStorage is enabled in your browser.
+              </p>
+            </div>
+          )}
+          
+          {pendingTransactions.length > 0 && (
+            <div className="mt-2 p-4 bg-blue-100 dark:bg-blue-900 rounded-md">
+              <p className="text-blue-800 dark:text-blue-200">
+                You have {pendingTransactions.length} pending transaction{pendingTransactions.length !== 1 ? 's' : ''} awaiting your approval.
               </p>
             </div>
           )}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -9,12 +8,14 @@ import DepositCard from '@/components/DepositCard';
 import ReferralCard from '@/components/ReferralCard';
 import StakingCard from '@/components/StakingCard';
 import WithdrawCard from '@/components/WithdrawCard';
+import PendingTransactionsCard from '@/components/PendingTransactionsCard';
 import { User, Transaction, REFERRAL_BONUSES } from '@/types';
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [nextReward, setNextReward] = useState<Date | null>(null);
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -25,11 +26,17 @@ const Dashboard = () => {
       return;
     }
     
-    setUser(JSON.parse(storedUser));
+    const userData = JSON.parse(storedUser);
+    setUser(userData);
+    
+    // Load user transactions
+    const allTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+    const userTxs = allTransactions.filter((tx: Transaction) => tx.userId === userData.id);
+    setUserTransactions(userTxs);
+    
     setLoading(false);
     
     // Calculate next reward time if staking is active
-    const userData = JSON.parse(storedUser);
     if (userData.lastStakingReward && userData.referrals.length >= 10 && userData.depositAmount >= 100) {
       const lastReward = new Date(userData.lastStakingReward);
       const nextRewardTime = new Date(lastReward);
@@ -70,10 +77,16 @@ const Dashboard = () => {
     
     checkStakingReward();
     
-    // Check for reward every minute
-    const interval = setInterval(checkStakingReward, 60000);
+    // Periodically refresh transactions
+    const refreshInterval = setInterval(() => {
+      const refreshedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      const refreshedUserTxs = refreshedTransactions.filter((tx: Transaction) => tx.userId === userData.id);
+      setUserTransactions(refreshedUserTxs);
+    }, 3000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [navigate]);
   
   const handleDeposit = (amount: number) => {
@@ -94,6 +107,9 @@ const Dashboard = () => {
     localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
     console.log('Deposit transaction created:', newTransaction);
     console.log('Updated transactions:', transactions);
+    
+    // Update local state with the new transaction
+    setUserTransactions([...userTransactions, newTransaction]);
     
     toast.info('Your deposit request is pending admin approval');
   };
@@ -117,6 +133,9 @@ const Dashboard = () => {
     localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
     console.log('Withdrawal transaction created:', newTransaction);
     console.log('Updated transactions:', transactions);
+    
+    // Update local state with the new transaction
+    setUserTransactions([...userTransactions, newTransaction]);
     
     toast.info('Your withdrawal request is pending admin approval');
   };
@@ -192,6 +211,11 @@ const Dashboard = () => {
     <Background>
       <div className="container max-w-7xl mx-auto px-4 pb-20">
         <DashboardHeader username={user.username} />
+        
+        {/* Pending Transactions Section */}
+        <div className="my-6 animate-slide-in-up" style={{ animationDelay: '0.05s' }}>
+          <PendingTransactionsCard transactions={userTransactions} />
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
           {/* Main balance card - full width on mobile, 1/3 on desktop */}

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { User, Transaction } from '@/types';
 
@@ -9,28 +9,33 @@ export const useTransactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
-  const loadData = () => {
-    const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
-    const storedUsers = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
-    
-    console.log('Loaded transactions:', storedTransactions);
-    console.log('Loaded users:', storedUsers);
-    
-    setTransactions(storedTransactions);
-    setUsers(storedUsers);
-    setLastRefresh(Date.now());
-  };
+  const loadData = useCallback(() => {
+    try {
+      const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      const storedUsers = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
+      
+      console.log('Loaded transactions:', storedTransactions);
+      console.log('Loaded users:', storedUsers);
+      
+      setTransactions(storedTransactions);
+      setUsers(storedUsers);
+      setLastRefresh(Date.now());
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load transaction data');
+    }
+  }, []);
 
-  // Auto-reload data every few seconds to see new transactions
+  // Auto-reload data more frequently to see new transactions
   useEffect(() => {
     loadData();
     
     const interval = setInterval(() => {
       loadData();
-    }, 3000); // Check every 3 seconds
+    }, 2000); // Check every 2 seconds
     
     return () => clearInterval(interval);
-  }, []);
+  }, [loadData]);
 
   const getUsernameById = (userId: number) => {
     const user = users.find(user => user.id === userId);
@@ -123,6 +128,11 @@ export const useTransactions = () => {
   const approvedTransactions = filteredTransactions.filter(t => t.status === 'approved');
   const rejectedTransactions = filteredTransactions.filter(t => t.status === 'rejected');
 
+  // Get user-specific transactions
+  const getUserTransactions = (userId: number) => {
+    return transactions.filter(t => t.userId === userId);
+  };
+
   return {
     transactions,
     users,
@@ -136,6 +146,7 @@ export const useTransactions = () => {
     filteredTransactions,
     pendingTransactions,
     approvedTransactions,
-    rejectedTransactions
+    rejectedTransactions,
+    getUserTransactions
   };
 };
