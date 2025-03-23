@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import DatabaseService from '@/services/DatabaseService';
 
-const TransactionTabs: React.FC = () => {
+interface TransactionTabsProps {
+  localTransactions?: any[]; // Fallback transactions from localStorage
+}
+
+const TransactionTabs: React.FC<TransactionTabsProps> = ({ localTransactions = [] }) => {
   const {
     searchTerm,
     setSearchTerm,
@@ -19,7 +23,8 @@ const TransactionTabs: React.FC = () => {
     approvedTransactions,
     rejectedTransactions,
     loadData,
-    lastRefresh
+    lastRefresh,
+    transactions
   } = useTransactions();
 
   // Load data when component mounts
@@ -29,6 +34,11 @@ const TransactionTabs: React.FC = () => {
   }, [loadData]);
 
   const handleManualRefresh = async () => {
+    // Direct localStorage read for debugging
+    const localData = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+    console.log("TransactionTabs local storage transactions:", localData);
+    
+    // Normal database refresh
     await loadData();
     
     // Debug: Check directly from database
@@ -45,6 +55,24 @@ const TransactionTabs: React.FC = () => {
     const date = new Date(lastRefresh);
     return date.toLocaleTimeString();
   };
+
+  // Use database transactions or fallback to localStorage if database is empty
+  const displayTransactions = transactions.length > 0 ? transactions : localTransactions;
+  
+  // Filter transactions based on status and search
+  const filterTransactions = (status: string) => {
+    return displayTransactions.filter((t: any) => {
+      const username = getUsernameById(t.userId).toLowerCase();
+      const matchesSearch = username.includes(searchTerm.toLowerCase()) || 
+                           t.type.includes(searchTerm.toLowerCase()) ||
+                           t.status.includes(searchTerm.toLowerCase());
+      return matchesSearch && t.status === status;
+    });
+  };
+  
+  const displayPendingTransactions = filterTransactions('pending');
+  const displayApprovedTransactions = filterTransactions('approved');
+  const displayRejectedTransactions = filterTransactions('rejected');
 
   return (
     <>
@@ -73,9 +101,9 @@ const TransactionTabs: React.FC = () => {
         <TabsList className="grid w-full max-w-md grid-cols-3 mb-4">
           <TabsTrigger value="pending" className="relative">
             Pending
-            {pendingTransactions.length > 0 && (
+            {displayPendingTransactions.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {pendingTransactions.length}
+                {displayPendingTransactions.length}
               </span>
             )}
           </TabsTrigger>
@@ -84,7 +112,7 @@ const TransactionTabs: React.FC = () => {
         </TabsList>
         
         <TabsContent value="pending" className="space-y-4">
-          {pendingTransactions.length === 0 ? (
+          {displayPendingTransactions.length === 0 ? (
             <div>
               <p className="text-center text-muted-foreground py-4">No pending transactions</p>
               <div className="bg-amber-100 dark:bg-amber-900 p-4 rounded-md">
@@ -95,7 +123,7 @@ const TransactionTabs: React.FC = () => {
               </div>
             </div>
           ) : (
-            pendingTransactions.map(transaction => (
+            displayPendingTransactions.map((transaction: any) => (
               <TransactionCard
                 key={transaction.id}
                 transaction={transaction}
@@ -109,10 +137,10 @@ const TransactionTabs: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="approved" className="space-y-4">
-          {approvedTransactions.length === 0 ? (
+          {displayApprovedTransactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No approved transactions</p>
           ) : (
-            approvedTransactions.map(transaction => (
+            displayApprovedTransactions.map((transaction: any) => (
               <TransactionCard
                 key={transaction.id}
                 transaction={transaction}
@@ -123,10 +151,10 @@ const TransactionTabs: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="rejected" className="space-y-4">
-          {rejectedTransactions.length === 0 ? (
+          {displayRejectedTransactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">No rejected transactions</p>
           ) : (
-            rejectedTransactions.map(transaction => (
+            displayRejectedTransactions.map((transaction: any) => (
               <TransactionCard
                 key={transaction.id}
                 transaction={transaction}

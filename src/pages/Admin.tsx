@@ -16,6 +16,7 @@ const ADMIN_USERS = ['admin', 'admin123', 'superadmin'];
 const Admin = () => {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [localTransactions, setLocalTransactions] = useState([]);
   const navigate = useNavigate();
   const { loadData, transactions, pendingTransactions } = useTransactions();
 
@@ -30,15 +31,46 @@ const Admin = () => {
     setLoading(false);
   }, []);
 
+  // Direct access to localStorage transactions
+  useEffect(() => {
+    const getLocalStorageTransactions = () => {
+      try {
+        const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+        setLocalTransactions(storedTransactions);
+        console.log("Direct localStorage transactions:", storedTransactions);
+        return storedTransactions;
+      } catch (error) {
+        console.error("Error reading localStorage:", error);
+        return [];
+      }
+    };
+
+    // Get transactions immediately
+    getLocalStorageTransactions();
+    
+    // And set up an interval to check regularly
+    const interval = setInterval(() => {
+      getLocalStorageTransactions();
+    }, 2000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // Load transaction data when authenticated changes
   useEffect(() => {
     if (authenticated) {
       // Force initialize database then load data
       const initAndLoad = async () => {
         try {
+          const localData = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+          console.log("Admin authenticated, local transactions:", localData);
+          
           await DatabaseService.initFromLocalStorage();
           loadData();
-          console.log("Admin authenticated, loading initial transaction data...");
+          
+          // Double-check that data is loaded
+          const dbTransactions = await DatabaseService.getTransactions();
+          console.log("Database transactions after load:", dbTransactions);
         } catch (error) {
           console.error("Error initializing database:", error);
         }
@@ -55,6 +87,12 @@ const Admin = () => {
   };
 
   const handleRefresh = async () => {
+    // Direct localStorage read for debugging
+    const localData = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+    console.log("Local storage transactions:", localData);
+    setLocalTransactions(localData);
+    
+    // Normal database refresh
     await loadData();
     
     // Debug log to check if transactions are loaded
@@ -85,6 +123,10 @@ const Admin = () => {
     );
   }
 
+  // Use local transactions as fallback if database is empty
+  const displayTransactions = transactions.length > 0 ? transactions : localTransactions;
+  const displayPendingTransactions = displayTransactions.filter(t => t.status === 'pending');
+
   return (
     <Background>
       <div className="container max-w-7xl mx-auto px-4 py-8 min-h-screen">
@@ -112,9 +154,9 @@ const Admin = () => {
         
         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
-            Total transactions: {transactions.length} • Pending: {pendingTransactions.length}
+            Total transactions: {displayTransactions.length} • Pending: {displayPendingTransactions.length}
           </p>
-          {transactions.length === 0 && (
+          {displayTransactions.length === 0 && (
             <div className="mt-2 p-4 bg-amber-100 dark:bg-amber-900 rounded-md">
               <p className="text-amber-800 dark:text-amber-200">
                 No transactions found in storage. If you submitted a deposit request, it might not have been saved properly.
@@ -123,16 +165,16 @@ const Admin = () => {
             </div>
           )}
           
-          {pendingTransactions.length > 0 && (
+          {displayPendingTransactions.length > 0 && (
             <div className="mt-2 p-4 bg-blue-100 dark:bg-blue-900 rounded-md">
               <p className="text-blue-800 dark:text-blue-200">
-                You have {pendingTransactions.length} pending transaction{pendingTransactions.length !== 1 ? 's' : ''} awaiting your approval.
+                You have {displayPendingTransactions.length} pending transaction{displayPendingTransactions.length !== 1 ? 's' : ''} awaiting your approval.
               </p>
             </div>
           )}
         </div>
         
-        <TransactionTabs />
+        <TransactionTabs localTransactions={localTransactions} />
       </div>
     </Background>
   );

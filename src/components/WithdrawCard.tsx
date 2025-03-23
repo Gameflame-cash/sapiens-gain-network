@@ -41,6 +41,32 @@ const WithdrawCard: React.FC<WithdrawCardProps> = ({ balance, onWithdraw }) => {
       // Create transaction using regular handler
       onWithdraw(withdrawAmount, address);
       
+      // Manually store the transaction in localStorage
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const timestamp = new Date().toISOString();
+      const transactionId = Date.now().toString();
+      
+      const newTransaction = {
+        id: transactionId,
+        userId: currentUser.id,
+        type: 'withdrawal',
+        amount: withdrawAmount,
+        status: 'pending',
+        address: address,
+        timestamp: timestamp
+      };
+      
+      // Add to localStorage first to ensure it's there
+      const existingTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      existingTransactions.push(newTransaction);
+      localStorage.setItem('sapiens_transactions', JSON.stringify(existingTransactions));
+      
+      console.log("Withdrawal transaction created:", newTransaction);
+      console.log("Updated transactions:", existingTransactions);
+      
+      // Then add to IndexedDB
+      await DatabaseService.addTransaction(newTransaction);
+      
       // Force a refresh of IndexedDB
       const currentTransactions = await DatabaseService.getTransactions();
       console.log('Current transactions after withdrawal:', currentTransactions);
