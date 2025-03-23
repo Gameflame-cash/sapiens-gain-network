@@ -37,14 +37,22 @@ const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) =
     const depositAmount = parseFloat(amount);
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
       onDeposit(depositAmount);
+      
+      // Force a refresh of localStorage data
+      const currentTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      console.log('Current transactions after deposit:', currentTransactions);
+      
       setAmount('');
-      setIsSubmitting(false);
       setShowUsdtAddress(false);
       toast.success(`Deposit request of $${depositAmount.toFixed(2)} submitted`);
-    }, 1000);
+    } catch (error) {
+      console.error('Error during deposit:', error);
+      toast.error('An error occurred while processing your deposit');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

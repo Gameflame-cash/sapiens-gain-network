@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import TransactionCard from './TransactionCard';
 import { useTransactions } from '@/hooks/useTransactions';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 const TransactionTabs: React.FC = () => {
   const {
@@ -14,18 +16,41 @@ const TransactionTabs: React.FC = () => {
     handleRejectTransaction,
     pendingTransactions,
     approvedTransactions,
-    rejectedTransactions
+    rejectedTransactions,
+    loadData,
+    lastRefresh
   } = useTransactions();
+
+  const handleManualRefresh = () => {
+    loadData();
+  };
+
+  const formatLastRefresh = () => {
+    const date = new Date(lastRefresh);
+    return date.toLocaleTimeString();
+  };
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <Input
           placeholder="Search by username, type, or status..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="glass-input max-w-md"
         />
+        
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Last refresh: {formatLastRefresh()}</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualRefresh}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw size={14} /> Refresh Now
+          </Button>
+        </div>
       </div>
       
       <Tabs defaultValue="pending" className="w-full">

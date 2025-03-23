@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -8,7 +9,7 @@ import DepositCard from '@/components/DepositCard';
 import ReferralCard from '@/components/ReferralCard';
 import StakingCard from '@/components/StakingCard';
 import WithdrawCard from '@/components/WithdrawCard';
-import { User, Transaction } from '@/types';
+import { User, Transaction, REFERRAL_BONUSES } from '@/types';
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -91,6 +92,8 @@ const Dashboard = () => {
     
     transactions.push(newTransaction);
     localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
+    console.log('Deposit transaction created:', newTransaction);
+    console.log('Updated transactions:', transactions);
     
     toast.info('Your deposit request is pending admin approval');
   };
@@ -112,6 +115,8 @@ const Dashboard = () => {
     
     transactions.push(newTransaction);
     localStorage.setItem('sapiens_transactions', JSON.stringify(transactions));
+    console.log('Withdrawal transaction created:', newTransaction);
+    console.log('Updated transactions:', transactions);
     
     toast.info('Your withdrawal request is pending admin approval');
   };
@@ -133,10 +138,14 @@ const Dashboard = () => {
     updatedUser.referrals = [...updatedUser.referrals, referral];
     updatedUser.balance += 10; // $10 referral bonus
     
-    // Check if reached 10 referrals
-    if (updatedUser.referrals.length === 10) {
-      updatedUser.balance += 100; // $100 bonus for completing 10 referrals
-      toast.success('Congratulations! You completed 10 referrals and earned a $100 bonus!');
+    // Check for milestone bonuses
+    const currentReferrals = updatedUser.referrals.length;
+    for (const bonus of REFERRAL_BONUSES) {
+      if (currentReferrals === bonus.count) {
+        updatedUser.balance += bonus.bonus;
+        toast.success(`Congratulations! You completed ${bonus.count} referrals and earned a $${bonus.bonus} bonus!`);
+        break;
+      }
     }
     
     // Update localStorage
@@ -175,6 +184,10 @@ const Dashboard = () => {
   const isStakingActive = user.referrals.length >= 10 && user.depositAmount >= 100 && !!user.lastStakingReward;
   const referralLink = `${window.location.origin}/?ref=${encodeURIComponent(user.username)}`;
 
+  // Find next referral milestone
+  const currentReferrals = user.referrals.length;
+  const nextMilestone = REFERRAL_BONUSES.find(bonus => bonus.count > currentReferrals);
+
   return (
     <Background>
       <div className="container max-w-7xl mx-auto px-4 pb-20">
@@ -188,6 +201,22 @@ const Dashboard = () => {
               referralCount={user.referrals.length}
               stakingActive={isStakingActive}
             />
+
+            {nextMilestone && (
+              <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <h3 className="font-medium text-sm mb-2">Next Referral Goal:</h3>
+                <div className="flex justify-between items-center">
+                  <span>{currentReferrals}/{nextMilestone.count} Referrals</span>
+                  <span className="font-bold">${nextMilestone.bonus} Bonus</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                  <div 
+                    className="bg-primary h-1.5 rounded-full" 
+                    style={{ width: `${Math.min(100, (currentReferrals / nextMilestone.count) * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Staking status card */}
@@ -223,6 +252,26 @@ const Dashboard = () => {
               referrals={user.referrals || []}
               referralLink={referralLink}
             />
+
+            {/* Referral Bonus Tiers */}
+            <div className="mt-6 p-6 bg-card rounded-lg border">
+              <h3 className="text-xl font-bold mb-4">Referral Bonus Tiers</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {REFERRAL_BONUSES.map((bonus) => (
+                  <div 
+                    key={bonus.count}
+                    className={`p-3 rounded-lg border ${currentReferrals >= bonus.count ? 'bg-primary/20 border-primary' : 'bg-muted/40 border-muted'}`}
+                  >
+                    <div className="text-2xl font-bold">{bonus.count}</div>
+                    <div className="text-sm">referrals</div>
+                    <div className="text-lg font-semibold mt-1">${bonus.bonus}</div>
+                    {currentReferrals >= bonus.count && (
+                      <div className="text-xs text-primary mt-1">Completed!</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

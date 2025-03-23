@@ -7,6 +7,7 @@ export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
 
   const loadData = () => {
     const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
@@ -17,6 +18,7 @@ export const useTransactions = () => {
     
     setTransactions(storedTransactions);
     setUsers(storedUsers);
+    setLastRefresh(Date.now());
   };
 
   // Auto-reload data every few seconds to see new transactions
@@ -25,7 +27,7 @@ export const useTransactions = () => {
     
     const interval = setInterval(() => {
       loadData();
-    }, 5000); // Check every 5 seconds
+    }, 3000); // Check every 3 seconds
     
     return () => clearInterval(interval);
   }, []);
@@ -127,6 +129,7 @@ export const useTransactions = () => {
     searchTerm,
     setSearchTerm,
     loadData,
+    lastRefresh,
     getUsernameById,
     handleApproveTransaction,
     handleRejectTransaction,

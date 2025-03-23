@@ -36,14 +36,21 @@ const WithdrawCard: React.FC<WithdrawCardProps> = ({ balance, onWithdraw }) => {
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
       onWithdraw(withdrawAmount, address);
       setAmount('');
       setAddress('');
-      setIsSubmitting(false);
       toast.success(`Withdrawal request of $${withdrawAmount.toFixed(2)} submitted`);
-    }, 1000);
+      
+      // Force a refresh of localStorage data
+      const currentTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      console.log('Current transactions after withdrawal:', currentTransactions);
+    } catch (error) {
+      console.error('Error during withdrawal:', error);
+      toast.error('An error occurred while processing your withdrawal');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

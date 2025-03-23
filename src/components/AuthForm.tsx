@@ -6,18 +6,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-type User = {
-  id: number;
-  username: string;
-  balance: number;
-  referrer: string | null;
-  created_at: string;
-};
+import { User } from '@/types';
 
 const AuthForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [referrer, setReferrer] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,7 +27,7 @@ const AuthForm = () => {
   }, [location]);
 
   // Mock user database (would connect to backend in production)
-  const mockRegister = async (username: string, password: string, referrer: string) => {
+  const mockRegister = async (username: string, password: string, email: string, phone: string, referrer: string) => {
     const users = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
     
     // Check if user already exists
@@ -44,6 +39,8 @@ const AuthForm = () => {
       id: Date.now(),
       username,
       password, // In a real app, this would be hashed
+      email,
+      phone,
       balance: 0,
       referrer: referrer || null,
       created_at: new Date().toISOString(),
@@ -82,13 +79,20 @@ const AuthForm = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password) {
+    if (!username || !password || !email || !phone) {
       toast.error('Please fill in all required fields');
       return;
     }
     
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
     try {
-      const result = await mockRegister(username, password, referrer);
+      const result = await mockRegister(username, password, email, phone, referrer);
       
       if (result.success) {
         localStorage.setItem('currentUser', JSON.stringify(result.user));
@@ -183,6 +187,26 @@ const AuthForm = () => {
                   className="glass-input text-lg h-12"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Input 
+                  type="email" 
+                  placeholder="Email Address" 
+                  className="glass-input text-lg h-12"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Input 
+                  type="tel" 
+                  placeholder="Phone Number" 
+                  className="glass-input text-lg h-12"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
