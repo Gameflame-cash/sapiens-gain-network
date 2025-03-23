@@ -11,6 +11,7 @@ export const useTransactions = () => {
 
   const loadData = useCallback(() => {
     try {
+      // Force read directly from localStorage every time
       const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
       const storedUsers = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
       
@@ -26,12 +27,16 @@ export const useTransactions = () => {
     }
   }, []);
 
-  // Auto-reload data more frequently to see new transactions
+  // Initialize data
   useEffect(() => {
     loadData();
-    
+  }, [loadData]);
+  
+  // Auto-reload data periodically
+  useEffect(() => {
     const interval = setInterval(() => {
       loadData();
+      console.log("Refreshing transaction data...");
     }, 2000); // Check every 2 seconds
     
     return () => clearInterval(interval);

@@ -7,7 +7,6 @@ import { Shield, ArrowLeft, RefreshCw } from 'lucide-react';
 import AdminAuth from '@/components/admin/AdminAuth';
 import TransactionTabs from '@/components/admin/TransactionTabs';
 import { useTransactions } from '@/hooks/useTransactions';
-import { User } from '@/types';
 import { toast } from 'sonner';
 
 // Admin usernames for demonstration
@@ -24,22 +23,19 @@ const Admin = () => {
     
     // Check if user is an admin
     if (currentUser && ADMIN_USERS.includes(currentUser.username)) {
-      loadData();
       setAuthenticated(true);
     }
     
     setLoading(false);
+  }, []);
 
-    // Force refresh every few seconds to ensure latest data
-    const refreshInterval = setInterval(() => {
-      if (authenticated) {
-        loadData();
-        console.log("Admin panel - auto refreshing transactions...");
-      }
-    }, 3000);
-
-    return () => clearInterval(refreshInterval);
-  }, [loadData, authenticated]);
+  // Load transaction data when authenticated changes
+  useEffect(() => {
+    if (authenticated) {
+      loadData();
+      console.log("Admin authenticated, loading initial transaction data...");
+    }
+  }, [authenticated, loadData]);
 
   const handleAuthenticate = () => {
     setAuthenticated(true);
@@ -50,6 +46,8 @@ const Admin = () => {
   const handleRefresh = () => {
     loadData();
     toast.info('Transactions refreshed');
+    console.log("Manual refresh triggered. Transactions:", transactions);
+    console.log("Pending transactions:", pendingTransactions);
   };
 
   if (loading) {

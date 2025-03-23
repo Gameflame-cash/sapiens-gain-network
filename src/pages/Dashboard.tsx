@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -252,8 +253,21 @@ const Dashboard = () => {
             />
           </div>
           
-          {/* Deposit card */}
+          {/* Referral card - now in top section */}
           <div className="animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
+            <ReferralCard 
+              username={user.username}
+              onAddReferral={handleAddReferral}
+              referrals={user.referrals || []}
+              referralLink={referralLink}
+            />
+          </div>
+        </div>
+        
+        {/* Move deposit and withdrawal sections below */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+          {/* Deposit card */}
+          <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
             <DepositCard 
               onDeposit={handleDeposit}
               referralCount={user.referrals.length}
@@ -261,41 +275,31 @@ const Dashboard = () => {
           </div>
           
           {/* Withdraw card */}
-          <div className="lg:col-span-1 md:col-span-2 col-span-1 animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
             <WithdrawCard 
               balance={user.balance}
               onWithdraw={handleWithdraw}
             />
           </div>
-          
-          {/* Referral card - full width */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-3 animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
-            <ReferralCard 
-              username={user.username}
-              onAddReferral={handleAddReferral}
-              referrals={user.referrals || []}
-              referralLink={referralLink}
-            />
-
-            {/* Referral Bonus Tiers */}
-            <div className="mt-6 p-6 bg-card rounded-lg border">
-              <h3 className="text-xl font-bold mb-4">Referral Bonus Tiers</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {REFERRAL_BONUSES.map((bonus) => (
-                  <div 
-                    key={bonus.count}
-                    className={`p-3 rounded-lg border ${currentReferrals >= bonus.count ? 'bg-primary/20 border-primary' : 'bg-muted/40 border-muted'}`}
-                  >
-                    <div className="text-2xl font-bold">{bonus.count}</div>
-                    <div className="text-sm">referrals</div>
-                    <div className="text-lg font-semibold mt-1">${bonus.bonus}</div>
-                    {currentReferrals >= bonus.count && (
-                      <div className="text-xs text-primary mt-1">Completed!</div>
-                    )}
-                  </div>
-                ))}
+        </div>
+        
+        {/* Referral Bonus Tiers */}
+        <div className="mt-8 p-6 bg-card rounded-lg border animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+          <h3 className="text-xl font-bold mb-4">Referral Bonus Tiers</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {REFERRAL_BONUSES.map((bonus) => (
+              <div 
+                key={bonus.count}
+                className={`p-3 rounded-lg border ${currentReferrals >= bonus.count ? 'bg-primary/20 border-primary' : 'bg-muted/40 border-muted'}`}
+              >
+                <div className="text-2xl font-bold">{bonus.count}</div>
+                <div className="text-sm">referrals</div>
+                <div className="text-lg font-semibold mt-1">${bonus.bonus}</div>
+                {currentReferrals >= bonus.count && (
+                  <div className="text-xs text-primary mt-1">Completed!</div>
+                )}
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

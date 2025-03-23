@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import TransactionCard from './TransactionCard';
@@ -21,8 +21,19 @@ const TransactionTabs: React.FC = () => {
     lastRefresh
   } = useTransactions();
 
+  // Load data when component mounts
+  useEffect(() => {
+    loadData();
+    console.log("TransactionTabs mounted, loading data...");
+    
+    // Log the pending transactions to help debug
+    console.log("Pending transactions in TransactionTabs:", pendingTransactions);
+  }, [loadData]);
+
   const handleManualRefresh = () => {
     loadData();
+    console.log("Manual refresh in TransactionTabs:");
+    console.log("Pending transactions after refresh:", pendingTransactions);
   };
 
   const formatLastRefresh = () => {
@@ -69,7 +80,15 @@ const TransactionTabs: React.FC = () => {
         
         <TabsContent value="pending" className="space-y-4">
           {pendingTransactions.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">No pending transactions</p>
+            <div>
+              <p className="text-center text-muted-foreground py-4">No pending transactions</p>
+              <div className="bg-amber-100 dark:bg-amber-900 p-4 rounded-md">
+                <p className="text-amber-800 dark:text-amber-200">
+                  If you've made a deposit or withdrawal request and it's not showing here, 
+                  try refreshing the page or clicking the "Refresh Now" button above.
+                </p>
+              </div>
+            </div>
           ) : (
             pendingTransactions.map(transaction => (
               <TransactionCard
