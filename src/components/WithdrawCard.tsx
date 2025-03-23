@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { ArrowUp, Wallet } from 'lucide-react';
+import DatabaseService from '@/services/DatabaseService';
 
 interface WithdrawCardProps {
   balance: number;
@@ -16,7 +17,7 @@ const WithdrawCard: React.FC<WithdrawCardProps> = ({ balance, onWithdraw }) => {
   const [address, setAddress] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const withdrawAmount = parseFloat(amount);
     
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
@@ -37,14 +38,16 @@ const WithdrawCard: React.FC<WithdrawCardProps> = ({ balance, onWithdraw }) => {
     setIsSubmitting(true);
     
     try {
+      // Create transaction using regular handler
       onWithdraw(withdrawAmount, address);
+      
+      // Force a refresh of IndexedDB
+      const currentTransactions = await DatabaseService.getTransactions();
+      console.log('Current transactions after withdrawal:', currentTransactions);
+      
       setAmount('');
       setAddress('');
       toast.success(`Withdrawal request of $${withdrawAmount.toFixed(2)} submitted`);
-      
-      // Force a refresh of localStorage data
-      const currentTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
-      console.log('Current transactions after withdrawal:', currentTransactions);
     } catch (error) {
       console.error('Error during withdrawal:', error);
       toast.error('An error occurred while processing your withdrawal');

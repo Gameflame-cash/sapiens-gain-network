@@ -2,21 +2,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { User, Transaction } from '@/types';
+import DatabaseService from '@/services/DatabaseService';
 
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  const loadData = useCallback(() => {
+  // Initialize database from localStorage if needed
+  useEffect(() => {
+    const initializeDatabase = async () => {
+      if (!isInitialized) {
+        await DatabaseService.initFromLocalStorage();
+        setIsInitialized(true);
+      }
+    };
+    
+    initializeDatabase();
+  }, [isInitialized]);
+
+  const loadData = useCallback(async () => {
     try {
-      // Force read directly from localStorage every time
-      const storedTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
-      const storedUsers = JSON.parse(localStorage.getItem('sapiens_users') || '[]');
+      // Get data from IndexedDB
+      const storedTransactions = await DatabaseService.getTransactions();
+      const storedUsers = await DatabaseService.getUsers();
       
-      console.log('Loaded transactions:', storedTransactions);
-      console.log('Loaded users:', storedUsers);
+      console.log('Loaded transactions from DB:', storedTransactions);
+      console.log('Loaded users from DB:', storedUsers);
       
       setTransactions(storedTransactions);
       setUsers(storedUsers);
@@ -29,25 +43,29 @@ export const useTransactions = () => {
 
   // Initialize data
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (isInitialized) {
+      loadData();
+    }
+  }, [loadData, isInitialized]);
   
   // Auto-reload data periodically
   useEffect(() => {
+    if (!isInitialized) return;
+    
     const interval = setInterval(() => {
       loadData();
       console.log("Refreshing transaction data...");
-    }, 2000); // Check every 2 seconds
+    }, 3000); // Check every 3 seconds
     
     return () => clearInterval(interval);
-  }, [loadData]);
+  }, [loadData, isInitialized]);
 
   const getUsernameById = (userId: number) => {
     const user = users.find(user => user.id === userId);
     return user ? user.username : 'Unknown User';
   };
 
-  const handleApproveTransaction = (transaction: Transaction) => {
+  const handleApproveTransaction = async (transaction: Transaction) => {
     const user = users.find(u => u.id === transaction.userId);
     if (!user) {
       toast.error('User not found');
@@ -64,14 +82,15 @@ export const useTransactions = () => {
         depositAmount: Math.max((user.depositAmount || 0), transaction.amount)
       };
       
-      const updatedTransactions = transactions.map(t => 
-        t.id === transaction.id ? { ...t, status: 'approved' as const } : t
+      const updatedTransaction = { ...transaction, status: 'approved' as const };
+      
+      // Update both databases
+      await DatabaseService.updateTransaction(updatedTransaction);
+      await DatabaseService.updateUser(updatedUsers[userIndex]);
+      
+      setTransactions(prevTransactions => 
+        prevTransactions.map(t => t.id === transaction.id ? updatedTransaction : t)
       );
-      
-      localStorage.setItem('sapiens_users', JSON.stringify(updatedUsers));
-      localStorage.setItem('sapiens_transactions', JSON.stringify(updatedTransactions));
-      
-      setTransactions(updatedTransactions);
       setUsers(updatedUsers);
       
       toast.success(`Deposit of $${transaction.amount} approved for ${user.username}`);
@@ -91,14 +110,15 @@ export const useTransactions = () => {
         balance: user.balance - transaction.amount
       };
       
-      const updatedTransactions = transactions.map(t => 
-        t.id === transaction.id ? { ...t, status: 'approved' as const } : t
+      const updatedTransaction = { ...transaction, status: 'approved' as const };
+      
+      // Update both databases
+      await DatabaseService.updateTransaction(updatedTransaction);
+      await DatabaseService.updateUser(updatedUsers[userIndex]);
+      
+      setTransactions(prevTransactions => 
+        prevTransactions.map(t => t.id === transaction.id ? updatedTransaction : t)
       );
-      
-      localStorage.setItem('sapiens_users', JSON.stringify(updatedUsers));
-      localStorage.setItem('sapiens_transactions', JSON.stringify(updatedTransactions));
-      
-      setTransactions(updatedTransactions);
       setUsers(updatedUsers);
       
       toast.success(`Withdrawal of $${transaction.amount} approved for ${user.username}`);
@@ -110,14 +130,15 @@ export const useTransactions = () => {
     }
   };
 
-  const handleRejectTransaction = (transaction: Transaction) => {
-    const updatedTransactions = transactions.map(t => 
-      t.id === transaction.id ? { ...t, status: 'rejected' as const } : t
+  const handleRejectTransaction = async (transaction: Transaction) => {
+    const updatedTransaction = { ...transaction, status: 'rejected' as const };
+    
+    // Update database
+    await DatabaseService.updateTransaction(updatedTransaction);
+    
+    setTransactions(prevTransactions => 
+      prevTransactions.map(t => t.id === transaction.id ? updatedTransaction : t)
     );
-    
-    localStorage.setItem('sapiens_transactions', JSON.stringify(updatedTransactions));
-    
-    setTransactions(updatedTransactions);
     
     toast.info(`Transaction ${transaction.id} rejected`);
   };

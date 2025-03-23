@@ -6,6 +6,7 @@ import TransactionCard from './TransactionCard';
 import { useTransactions } from '@/hooks/useTransactions';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import DatabaseService from '@/services/DatabaseService';
 
 const TransactionTabs: React.FC = () => {
   const {
@@ -25,15 +26,19 @@ const TransactionTabs: React.FC = () => {
   useEffect(() => {
     loadData();
     console.log("TransactionTabs mounted, loading data...");
-    
-    // Log the pending transactions to help debug
-    console.log("Pending transactions in TransactionTabs:", pendingTransactions);
   }, [loadData]);
 
-  const handleManualRefresh = () => {
-    loadData();
+  const handleManualRefresh = async () => {
+    await loadData();
+    
+    // Debug: Check directly from database
+    const dbTransactions = await DatabaseService.getTransactions();
+    const pendingDBTransactions = dbTransactions.filter((t: any) => t.status === 'pending');
+    
     console.log("Manual refresh in TransactionTabs:");
-    console.log("Pending transactions after refresh:", pendingTransactions);
+    console.log("All DB transactions:", dbTransactions);
+    console.log("Pending DB transactions:", pendingDBTransactions);
+    console.log("Pending transactions in state:", pendingTransactions);
   };
 
   const formatLastRefresh = () => {

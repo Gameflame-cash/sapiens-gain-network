@@ -8,6 +8,7 @@ import AdminAuth from '@/components/admin/AdminAuth';
 import TransactionTabs from '@/components/admin/TransactionTabs';
 import { useTransactions } from '@/hooks/useTransactions';
 import { toast } from 'sonner';
+import DatabaseService from '@/services/DatabaseService';
 
 // Admin usernames for demonstration
 const ADMIN_USERS = ['admin', 'admin123', 'superadmin'];
@@ -32,8 +33,18 @@ const Admin = () => {
   // Load transaction data when authenticated changes
   useEffect(() => {
     if (authenticated) {
-      loadData();
-      console.log("Admin authenticated, loading initial transaction data...");
+      // Force initialize database then load data
+      const initAndLoad = async () => {
+        try {
+          await DatabaseService.initFromLocalStorage();
+          loadData();
+          console.log("Admin authenticated, loading initial transaction data...");
+        } catch (error) {
+          console.error("Error initializing database:", error);
+        }
+      };
+      
+      initAndLoad();
     }
   }, [authenticated, loadData]);
 
@@ -43,11 +54,15 @@ const Admin = () => {
     toast.success('Admin authenticated successfully');
   };
 
-  const handleRefresh = () => {
-    loadData();
+  const handleRefresh = async () => {
+    await loadData();
+    
+    // Debug log to check if transactions are loaded
+    const dbTransactions = await DatabaseService.getTransactions();
+    console.log("Manual refresh triggered. DB Transactions:", dbTransactions);
+    console.log("Pending transactions in state:", pendingTransactions);
+    
     toast.info('Transactions refreshed');
-    console.log("Manual refresh triggered. Transactions:", transactions);
-    console.log("Pending transactions:", pendingTransactions);
   };
 
   if (loading) {
@@ -103,7 +118,7 @@ const Admin = () => {
             <div className="mt-2 p-4 bg-amber-100 dark:bg-amber-900 rounded-md">
               <p className="text-amber-800 dark:text-amber-200">
                 No transactions found in storage. If you submitted a deposit request, it might not have been saved properly.
-                Try making another deposit from the dashboard or check if localStorage is enabled in your browser.
+                Try making another deposit from the dashboard or check if your browser supports IndexedDB.
               </p>
             </div>
           )}

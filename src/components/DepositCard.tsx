@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { DollarSign, Copy, Wallet } from 'lucide-react';
+import DatabaseService from '@/services/DatabaseService';
 
 interface DepositCardProps {
   onDeposit: (amount: number) => void;
@@ -33,15 +34,16 @@ const DepositCard: React.FC<DepositCardProps> = ({ onDeposit, referralCount }) =
     toast.success('USDT address copied to clipboard');
   };
 
-  const handleConfirmDeposit = () => {
+  const handleConfirmDeposit = async () => {
     const depositAmount = parseFloat(amount);
     setIsSubmitting(true);
     
     try {
+      // Create transaction using regular handler
       onDeposit(depositAmount);
       
-      // Force a refresh of localStorage data
-      const currentTransactions = JSON.parse(localStorage.getItem('sapiens_transactions') || '[]');
+      // Force a refresh of IndexedDB
+      const currentTransactions = await DatabaseService.getTransactions();
       console.log('Current transactions after deposit:', currentTransactions);
       
       setAmount('');
